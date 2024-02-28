@@ -106,4 +106,8 @@ alias vi="nvim"
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 eval "$(zoxide init --cmd cd zsh)"
-export PATH="$PATH:/opt/nvim/"
+export PATH="$PATH:/opt/nvim/:~/.dotnet/tools"
+
+
+# Load Angular CLI autocompletion.
+source <(ng completion script)
