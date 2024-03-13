@@ -4,10 +4,12 @@
 
 To install these dotfiles you need to install the following dependencies:
 ```bash
-sudo apt install neovim stow fzf
+yay -S stow fzf
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-brew install zoxide
+brew install neovim zoxide
+curl -fsSL https://get.pnpm.io/install.sh | sh -
+
 ```
 
 
