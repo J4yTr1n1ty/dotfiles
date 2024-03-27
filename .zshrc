@@ -102,6 +102,7 @@ source $ZSH/oh-my-zsh.sh
 
 alias vim="nvim"
 alias vi="nvim"
+alias v="nvim"
 
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
