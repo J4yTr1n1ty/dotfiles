@@ -163,3 +163,4 @@ chpwd_functions=(${chpwd_functions[@]} "_zoxide_hook")
 
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 alias vim="nvim"
+. "$HOME/.cargo/env"
