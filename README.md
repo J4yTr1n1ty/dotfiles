@@ -4,8 +4,7 @@
 
 To install these dotfiles you need to install the following dependencies:
 ```bash
-yay -S stow fzf
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+yay -S stow fzf oh-my-posh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 brew install neovim zoxide
 curl -fsSL https://get.pnpm.io/install.sh | sh -
