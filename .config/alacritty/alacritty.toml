@@ -96,7 +96,7 @@ style = "Italic"
 [window]
 decorations = "buttonless"
 dynamic_padding = false
-opacity = 1
+opacity = 0.95
 option_as_alt = "Both"
 startup_mode = "Windowed"
 
