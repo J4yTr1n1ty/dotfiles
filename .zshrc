@@ -85,6 +85,15 @@ zstyle ':completion:*' menu no
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
 zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 
+# Start Screen
+export PF_INFO="ascii title os host kernel uptime memory editor palette"
+GITDIR="./.git/"
+if [ -d "$GITDIR" ]; then
+  onefetch
+else
+  pfetch
+fi
+
 # Load Angular CLI autocompletion.
 source <(ng completion script)
 
