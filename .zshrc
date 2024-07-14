@@ -1,3 +1,8 @@
+# Run a tmux session if not already in one
+if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
+  exec tmux
+fi
+
 # Set the directory we want to store zinit and plugins
 ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
 
@@ -57,7 +62,7 @@ export FZF_DEFAULT_COMMAND="fd --type f --hidden --follow --exclude .git"
 eval "$(fzf --zsh)"
 
 eval "$(zoxide init --cmd cd zsh)"
-export PATH="/opt/nvim/:~/.dotnet/tools:~/.config/emacs/bin:$PATH"
+export PATH="/opt/nvim/:~/.dotnet/tools:~/.config/emacs/bin:$HOME/.local/bin:$PATH"
 
 export EDITOR="nvim"
 
