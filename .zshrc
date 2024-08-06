@@ -50,6 +50,8 @@ alias la="ls -a"
 alias c="clear"
 alias q="exit"
 
+alias weather="curl wttr.in"
+
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 # fzf
