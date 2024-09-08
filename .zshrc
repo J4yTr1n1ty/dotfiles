@@ -27,7 +27,6 @@ zinit snippet OMZP::sudo
 zinit snippet OMZP::archlinux
 zinit snippet OMZP::command-not-found
 zinit snippet OMZP::colored-man-pages
-zinit snippet OMZP::tmux
 
 # Load completions
 autoload -Uz compinit && compinit
