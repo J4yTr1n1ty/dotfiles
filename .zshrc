@@ -51,6 +51,12 @@ alias q="exit"
 
 alias weather="curl wttr.in"
 
+alias lg="lazygit"
+
+alias ..="cd .."
+
+alias mkcd="mkdir -p $1 && cd $1"
+
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 # fzf
