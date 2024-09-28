@@ -73,6 +73,10 @@ export PATH="/opt/nvim/:~/.dotnet/tools:~/.config/emacs/bin:$HOME/.local/bin:$PA
 
 export EDITOR="nvim"
 
+# GPG
+export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+gpgconf --launch gpg-agent
+
 # History
 HISTSIZE=5000
 HISTFILE=~/.zsh_history
