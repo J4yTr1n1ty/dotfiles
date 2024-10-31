@@ -55,7 +55,10 @@ alias lg="lazygit"
 
 alias ..="cd .."
 
-alias mkcd="mkdir -p $1 && cd $1"
+# Ranger, if installed
+if command -v ranger &> /dev/null; then
+  alias ra="ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR
+fi
 
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
