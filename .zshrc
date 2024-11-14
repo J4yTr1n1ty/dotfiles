@@ -124,3 +124,5 @@ esac
 # pnpm end
 
 . "$HOME/.cargo/env"
+export PATH="/home/jay/.config/herd-lite/bin:$PATH"
+export PHP_INI_SCAN_DIR="/home/jay/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
