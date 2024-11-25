@@ -27,7 +27,6 @@ zinit snippet OMZP::sudo
 zinit snippet OMZP::archlinux
 zinit snippet OMZP::command-not-found
 zinit snippet OMZP::colored-man-pages
-zinit snippet OMZP::tmux
 
 # Load completions
 autoload -Uz compinit && compinit
@@ -52,6 +51,15 @@ alias q="exit"
 
 alias weather="curl wttr.in"
 
+alias lg="lazygit"
+
+alias ..="cd .."
+
+# Ranger, if installed
+if command -v ranger &> /dev/null; then
+  alias ra="ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR
+fi
+
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 # fzf
@@ -67,6 +75,10 @@ eval "$(zoxide init --cmd cd zsh)"
 export PATH="/opt/nvim/:~/.dotnet/tools:~/.config/emacs/bin:$HOME/.local/bin:$PATH"
 
 export EDITOR="nvim"
+
+# GPG
+export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+gpgconf --launch gpg-agent
 
 # History
 HISTSIZE=5000
@@ -112,3 +124,5 @@ esac
 # pnpm end
 
 . "$HOME/.cargo/env"
+export PATH="/home/jay/.config/herd-lite/bin:$PATH"
+export PHP_INI_SCAN_DIR="/home/jay/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
