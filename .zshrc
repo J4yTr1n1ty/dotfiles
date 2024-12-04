@@ -124,5 +124,13 @@ esac
 # pnpm end
 
 . "$HOME/.cargo/env"
+
 export PATH="/home/jay/.config/herd-lite/bin:$PATH"
 export PHP_INI_SCAN_DIR="/home/jay/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
+
+# bun completions
+[ -s "/home/jay/.bun/_bun" ] && source "/home/jay/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
