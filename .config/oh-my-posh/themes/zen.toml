@@ -22,10 +22,6 @@ final_space = true
     foreground = 'magenta'
     background = 'transparent'
     type = 'os'
-    style = 'plain'
-
-    [blocks.segments.properties]
-      cache_duration = 'none'
 
   [[blocks.segments]]
     template = '{{ .Path }}'

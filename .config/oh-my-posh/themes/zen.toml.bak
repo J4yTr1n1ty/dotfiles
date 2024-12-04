@@ -10,6 +10,7 @@ console_title_template = '{{ .Shell }} in {{ .Folder }}'
   newline = true
 
   [[blocks.segments]]
+<<<<<<< HEAD
     type = 'os'
     style = 'plain'
     background = 'transparent'
@@ -17,6 +18,8 @@ console_title_template = '{{ .Shell }} in {{ .Folder }}'
     template = '{{ if .WSL }} WSL {{ end }}{{ .Icon }} <cyan>|</> '
 
   [[blocks.segments]]
+=======
+>>>>>>> 92a154c (updated oh-my-posh theme)
     type = 'path'
     style = 'plain'
     background = 'transparent'
