@@ -1,0 +1,7 @@
+[[search_dirs]]
+path = "/home/jay/Projects"
+depth = 10
+
+[[search_dirs]]
+path = "/home/jay/dotfiles"
+depth = 5
