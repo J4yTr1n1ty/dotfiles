@@ -60,7 +60,7 @@ if command -v ranger &> /dev/null; then
   alias ra="ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR
 fi
 
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+[ -s "/home/linuxbrew/.linuxbrew/bin/brew" ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 # fzf
 export FZF_DEFAULT_OPTS=" \
@@ -71,7 +71,13 @@ export FZF_DEFAULT_OPTS=" \
 export FZF_DEFAULT_COMMAND="fd --type f --hidden --follow --exclude .git"
 eval "$(fzf --zsh)"
 
-eval "$(zoxide init --cmd cd zsh)"
+if command -v zoxide &> /dev/null; then
+  eval "$(zoxide init --cmd cd zsh)"
+else
+  echo "zoxide not installed"
+fi
+
+# Path
 export PATH="/opt/nvim/:~/.dotnet/tools:~/.config/emacs/bin:$HOME/.local/bin:$PATH"
 
 export EDITOR="nvim"
@@ -106,10 +112,16 @@ zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 
 # Start Screen
 export PF_INFO="ascii title os host kernel uptime memory editor palette"
-pfetch
+if command -v pfetch &> /dev/null; then
+  pfetch
+else
+  echo "pfetch not installed"
+fi
 
 # Load Angular CLI autocompletion.
-source <(ng completion script)
+if ! command -v ng &> /dev/null; then
+  source <(ng completion script)
+fi
 
 # Go
 export GOPATH=$HOME/go
@@ -123,7 +135,8 @@ case ":$PATH:" in
 esac
 # pnpm end
 
-. "$HOME/.cargo/env"
+# Cargo
+[ -s "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
 export PATH="/home/jay/.config/herd-lite/bin:$PATH"
 export PHP_INI_SCAN_DIR="/home/jay/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
@@ -134,3 +147,7 @@ export PHP_INI_SCAN_DIR="/home/jay/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
