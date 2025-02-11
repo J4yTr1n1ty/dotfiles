@@ -118,11 +118,6 @@ else
   echo "pfetch not installed"
 fi
 
-# Load Angular CLI autocompletion.
-if ! command -v ng &> /dev/null; then
-  source <(ng completion script)
-fi
-
 # Go
 export GOPATH=$HOME/go
 export PATH=$PATH:$GOPATH/bin
@@ -147,6 +142,11 @@ export PHP_INI_SCAN_DIR="/home/jay/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+# Load Angular CLI autocompletion.
+if ! command -v ng &> /dev/null; then
+  source <(ng completion script)
+fi
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
