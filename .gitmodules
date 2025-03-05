@@ -1,5 +1,5 @@
-[submodule ".config/nvim"]
-	path = .config/nvim
+[submodule ".config/nvim_chad"]
+	path = .config/nvim_chad
 	url = git@github.com:J4yTr1n1ty/nvchad-config.git
 [submodule ".config/doom"]
 	path = .config/doom
