@@ -1,0 +1,15 @@
+;; vim: ft=lisp
+;; kanata config file
+
+(defsrc
+  caps
+)
+
+(defalias
+  escctrl (tap-hold 100 100 esc lctrl)
+  bspcctrl (tap-hold 100 100 bspc lctrl)
+)
+
+(deflayer base
+  @bspcctrl
+)
