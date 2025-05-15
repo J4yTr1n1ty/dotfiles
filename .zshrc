@@ -55,6 +55,8 @@ alias lg="lazygit"
 
 alias ..="cd .."
 
+alias dotnet-test-pretty='dotnet test --no-restore --verbosity=normal | awk '\''/Failed /{print "\n\033[31mFailed: " $2 "\033[0m"} /Error Message:/{print "\033[33mError: " substr($0, index($0, ":")+1) "\033[0m"; st=0} /Stack Trace:/{st=1; next} st==1 && /at /{print "\033[36mStack: " $0 "\033[0m"; st=0}'\'''
+
 # Ranger, if installed
 if command -v ranger &> /dev/null; then
   alias ra="ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR
