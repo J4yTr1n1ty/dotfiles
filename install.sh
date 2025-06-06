@@ -80,6 +80,25 @@ detect_system() {
   fi
 }
 
+install_yay() {
+  if [ "$DISTRO" = "arch" ] && ! command -v yay &>/dev/null; then
+    print_step "Installing yay AUR helper..."
+
+    # Install base-devel and git if not present
+    pacman -S --needed --noconfirm base-devel git
+
+    # Clone and build yay as the actual user
+    sudo -u "$ACTUAL_USER" bash -c "
+      cd /tmp
+      git clone https://aur.archlinux.org/yay.git
+      cd yay
+      makepkg -si --noconfirm
+    "
+
+    print_success "yay installed"
+  fi
+}
+
 install_packages() {
   local packages=("$@")
 
@@ -91,10 +110,13 @@ install_packages() {
 
   case "$PACKAGE_MANAGER" in
   "pacman")
+    # Install yay first if needed
+    install_yay
+
     if command -v yay &>/dev/null; then
-      yay -S --noconfirm "${packages[@]}" || {
-        print_warning "yay failed, trying with pacman..."
-        pacman -S --noconfirm "${packages[@]}"
+      sudo -u "$ACTUAL_USER" yay -S --noconfirm "${packages[@]}" || {
+        print_warning "yay failed for some packages, trying with pacman..."
+        pacman -S --noconfirm "${packages[@]}" 2>/dev/null || true
       }
     else
       pacman -S --noconfirm "${packages[@]}"
@@ -179,11 +201,12 @@ select_dev_tools() {
   echo "2) Go"
   echo "3) Rust"
   echo "4) Node.js (via NVM)"
-  echo "5) Android Studio"
-  echo "6) All development tools"
-  echo "7) Back to main menu"
+  echo "5) Bun JavaScript Runtime"
+  echo "6) Android Development Tools"
+  echo "7) All development tools"
+  echo "8) Back to main menu"
   echo
-  read -p "Enter your choices (1-7, multiple numbers separated by space): " -a choices
+  read -p "Enter your choices (1-8, multiple numbers separated by space): " -a choices
 
   INSTALL_DEV_TOOLS=()
   for choice in "${choices[@]}"; do
@@ -192,9 +215,10 @@ select_dev_tools() {
     2) INSTALL_DEV_TOOLS+=("go") ;;
     3) INSTALL_DEV_TOOLS+=("rust") ;;
     4) INSTALL_DEV_TOOLS+=("nodejs") ;;
-    5) INSTALL_DEV_TOOLS+=("android") ;;
-    6) INSTALL_DEV_TOOLS=("dotnet" "go" "rust" "nodejs" "android") ;;
-    7) return ;;
+    5) INSTALL_DEV_TOOLS+=("bun") ;;
+    6) INSTALL_DEV_TOOLS+=("android") ;;
+    7) INSTALL_DEV_TOOLS=("dotnet" "go" "rust" "nodejs" "bun" "android") ;;
+    8) return ;;
     esac
   done
 }
@@ -202,66 +226,107 @@ select_dev_tools() {
 install_core_packages() {
   print_step "Installing core shell environment..."
 
+  # Install base-devel first on Arch for AUR builds
+  if [ "$DISTRO" = "arch" ]; then
+    pacman -S --needed --noconfirm base-devel git
+  fi
+
   local packages=()
   case "$DISTRO" in
   "arch")
-    packages=(stow zsh tmux fzf eza zoxide lazygit neovim ranger pfetch bat fd ripgrep git)
+    # Most packages are now in official repositories!
+    packages=(stow zsh tmux fzf neovim ranger bat fd ripgrep git curl wget unzip eza zoxide lazygit)
+    install_packages "${packages[@]}"
+
+    # Only a few AUR packages needed now
+    local aur_packages=(pfetch-rs)
+    install_packages "${aur_packages[@]}"
     ;;
   "debian")
-    packages=(stow zsh tmux fzf neovim ranger bat fd-find ripgrep git)
+    packages=(stow zsh tmux fzf neovim ranger bat fd-find ripgrep git curl wget unzip)
+    install_packages "${packages[@]}"
+
+    # Install tools not available in repositories
+    install_debian_tools
     ;;
   esac
 
-  install_packages "${packages[@]}"
+  # Install Oh My Posh
+  install_oh_my_posh
 
-  # Install tools not available in repositories
-  if [ "$DISTRO" = "debian" ]; then
-    print_step "Installing additional tools via cargo/manual installation..."
+  print_success "Core shell environment installed"
+}
 
-    # Install eza
-    if ! command -v eza &>/dev/null; then
-      sudo -u "$ACTUAL_USER" bash -c 'curl -sSfL https://github.com/eza-community/eza/releases/latest/download/eza_x86_64-unknown-linux-gnu.tar.gz | tar xz -C ~/.local/bin'
-    fi
+install_debian_tools() {
+  print_step "Installing additional tools for Debian/Ubuntu..."
 
-    # Install zoxide
-    if ! command -v zoxide &>/dev/null; then
-      sudo -u "$ACTUAL_USER" bash -c 'curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh'
-    fi
+  # Create .local/bin directory
+  sudo -u "$ACTUAL_USER" mkdir -p "$USER_HOME/.local/bin"
 
-    # Install lazygit
-    if ! command -v lazygit &>/dev/null; then
-      LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
-      curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
-      tar xf lazygit.tar.gz lazygit
-      install lazygit /usr/local/bin
-      rm lazygit.tar.gz lazygit
-    fi
+  # Install eza
+  if ! command -v eza &>/dev/null; then
+    print_step "Installing eza..."
+    local eza_version=$(curl -s "https://api.github.com/repos/eza-community/eza/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
+    sudo -u "$ACTUAL_USER" bash -c "
+      cd /tmp
+      wget -q https://github.com/eza-community/eza/releases/latest/download/eza_x86_64-unknown-linux-gnu.tar.gz
+      tar xzf eza_x86_64-unknown-linux-gnu.tar.gz
+      mv eza '$USER_HOME/.local/bin/'
+      rm eza_x86_64-unknown-linux-gnu.tar.gz
+    "
   fi
 
-  # Install Oh My Posh
+  # Install zoxide
+  if ! command -v zoxide &>/dev/null; then
+    print_step "Installing zoxide..."
+    sudo -u "$ACTUAL_USER" bash -c 'curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh'
+  fi
+
+  # Install lazygit
+  if ! command -v lazygit &>/dev/null; then
+    print_step "Installing lazygit..."
+    local lazygit_version=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
+    curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${lazygit_version}_Linux_x86_64.tar.gz"
+    tar xf /tmp/lazygit.tar.gz -C /tmp lazygit
+    install /tmp/lazygit /usr/local/bin
+    rm /tmp/lazygit.tar.gz /tmp/lazygit
+  fi
+
+  # Install pfetch-rs (Rust version)
+  if ! command -v pfetch &>/dev/null; then
+    print_step "Installing pfetch..."
+    local pfetch_version=$(curl -s "https://api.github.com/Gobidev/pfetch-rs/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
+    sudo -u "$ACTUAL_USER" bash -c "
+      cd /tmp
+      wget -q https://github.com/Gobidev/pfetch-rs/releases/latest/download/pfetch-linux-amd64
+      chmod +x pfetch-linux-amd64
+      mv pfetch-linux-amd64 '$USER_HOME/.local/bin/pfetch'
+    "
+  fi
+}
+
+install_oh_my_posh() {
   case "$DISTRO" in
   "arch")
-    if command -v yay &>/dev/null; then
-      yay -S --noconfirm oh-my-posh || {
-        print_warning "yay failed for oh-my-posh, installing manually..."
-        install_oh_my_posh_manual
-      }
-    else
+    # Try AUR packages first
+    local aur_packages=(oh-my-posh-bin)
+    install_packages "${aur_packages[@]}" || {
+      print_warning "AUR installation failed, installing manually..."
       install_oh_my_posh_manual
-    fi
+    }
     ;;
   "debian")
     install_oh_my_posh_manual
     ;;
   esac
-
-  print_success "Core shell environment installed"
 }
 
 install_oh_my_posh_manual() {
   print_step "Installing Oh My Posh manually..."
-  wget -q https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
-  chmod +x /usr/local/bin/oh-my-posh
+  if ! command -v oh-my-posh &>/dev/null; then
+    wget -q https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
+    chmod +x /usr/local/bin/oh-my-posh
+  fi
 }
 
 install_terminal_packages() {
@@ -272,19 +337,20 @@ install_terminal_packages() {
     "ghostty")
       case "$DISTRO" in
       "arch")
-        if command -v yay &>/dev/null; then
-          yay -S --noconfirm ghostty
-        else
-          print_warning "ghostty requires AUR, skipping..."
-        fi
+        # Ghostty is now in official extra repository!
+        install_packages ghostty
         ;;
       "debian")
-        print_warning "ghostty not available in repositories, please install manually"
+        print_warning "Ghostty requires manual compilation on Debian/Ubuntu"
+        print_warning "Visit: https://ghostty.org/docs/install/source"
         ;;
       esac
       ;;
-    "kitty" | "alacritty")
-      install_packages "$terminal"
+    "kitty")
+      install_packages kitty
+      ;;
+    "alacritty")
+      install_packages alacritty
       ;;
     esac
   done
@@ -297,12 +363,24 @@ install_hyprland_packages() {
 
   case "$DISTRO" in
   "arch")
-    local packages=(hyprland hyprpaper waybar wofi mako swaylock brightnessctl pamixer playerctl blueman networkmanager nm-connection-editor)
+    # Core Hyprland packages
+    local packages=(hyprland hyprpaper)
     install_packages "${packages[@]}"
+
+    # Additional desktop components
+    local desktop_packages=(waybar wofi mako swaylock brightnessctl pamixer playerctl)
+    install_packages "${desktop_packages[@]}"
+
+    # Network and Bluetooth
+    local network_packages=(blueman networkmanager nm-connection-editor)
+    install_packages "${network_packages[@]}"
+
+    # Enable NetworkManager
+    systemctl enable NetworkManager
     ;;
   "debian")
     print_warning "Hyprland installation on Debian/Ubuntu requires manual setup"
-    print_warning "Please refer to Hyprland documentation for installation instructions"
+    print_warning "Please refer to: https://wiki.hyprland.org/Getting-Started/Installation/"
     ;;
   esac
 
@@ -317,11 +395,11 @@ install_font_packages() {
     "maple")
       case "$DISTRO" in
       "arch")
-        if command -v yay &>/dev/null; then
-          yay -S --noconfirm ttf-maple
-        else
+        # Try the main AUR package
+        install_packages maplemono-nf || {
+          print_warning "maplemono-nf not found, installing manually..."
           install_maple_manual
-        fi
+        }
         ;;
       "debian")
         install_maple_manual
@@ -331,11 +409,7 @@ install_font_packages() {
     "jetbrains")
       case "$DISTRO" in
       "arch")
-        if command -v yay &>/dev/null; then
-          yay -S --noconfirm ttf-jetbrains-mono-nerd
-        else
-          install_jetbrains_manual
-        fi
+        install_packages ttf-jetbrains-mono-nerd
         ;;
       "debian")
         install_jetbrains_manual
@@ -354,24 +428,36 @@ install_maple_manual() {
   print_step "Installing Maple Mono NF manually..."
   local font_dir="$USER_HOME/.local/share/fonts"
   sudo -u "$ACTUAL_USER" mkdir -p "$font_dir"
-  sudo -u "$ACTUAL_USER" bash -c "
-        cd '$font_dir'
-        wget -q https://github.com/subframe7536/Maple-font/releases/latest/download/MapleMono-NF.zip
-        unzip -q MapleMono-NF.zip
-        rm MapleMono-NF.zip
+
+  # Get latest release info
+  local release_info=$(curl -s "https://api.github.com/repos/subframe7536/Maple-font/releases/latest")
+  local download_url=$(echo "$release_info" | grep -o '"browser_download_url": "[^"]*MapleMono-NF[^"]*\.zip"' | cut -d'"' -f4)
+
+  if [ -n "$download_url" ]; then
+    sudo -u "$ACTUAL_USER" bash -c "
+      cd '$font_dir'
+      wget -q '$download_url' -O MapleMono-NF.zip
+      unzip -q MapleMono-NF.zip
+      rm MapleMono-NF.zip
     "
+    print_success "Maple Mono NF installed manually"
+  else
+    print_error "Failed to find Maple Mono NF download URL"
+  fi
 }
 
 install_jetbrains_manual() {
   print_step "Installing JetBrains Mono Nerd Font manually..."
   local font_dir="$USER_HOME/.local/share/fonts"
   sudo -u "$ACTUAL_USER" mkdir -p "$font_dir"
+
   sudo -u "$ACTUAL_USER" bash -c "
-        cd '$font_dir'
-        wget -q https://github.com/ryanoasis/nerd-fonts/releases/download/v3.0.2/JetBrainsMono.zip
-        unzip -q JetBrainsMono.zip
-        rm JetBrainsMono.zip
-    "
+    cd '$font_dir'
+    wget -q https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/JetBrainsMono.zip
+    unzip -q JetBrainsMono.zip
+    rm JetBrainsMono.zip
+  "
+  print_success "JetBrains Mono Nerd Font installed manually"
 }
 
 install_dev_tools() {
@@ -382,11 +468,16 @@ install_dev_tools() {
     "dotnet")
       case "$DISTRO" in
       "arch")
-        install_packages dotnet-runtime dotnet-sdk
+        install_packages dotnet-runtime dotnet-sdk aspnet-runtime
         ;;
       "debian")
-        print_warning ".NET installation on Debian/Ubuntu requires manual setup"
-        print_warning "Please visit: https://dotnet.microsoft.com/download"
+        print_step "Installing .NET on Debian/Ubuntu..."
+        # Add Microsoft repository
+        wget https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O /tmp/packages-microsoft-prod.deb
+        dpkg -i /tmp/packages-microsoft-prod.deb
+        rm /tmp/packages-microsoft-prod.deb
+        apt update
+        apt install -y dotnet-sdk-8.0 aspnetcore-runtime-8.0
         ;;
       esac
       ;;
@@ -395,24 +486,39 @@ install_dev_tools() {
       ;;
     "rust")
       print_step "Installing Rust via rustup..."
-      sudo -u "$ACTUAL_USER" bash -c 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y'
+      if ! command -v rustup &>/dev/null; then
+        sudo -u "$ACTUAL_USER" bash -c 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y'
+        print_success "Rust installed. Run 'source ~/.cargo/env' to update PATH"
+      fi
       ;;
     "nodejs")
       print_step "Installing Node.js via NVM..."
-      sudo -u "$ACTUAL_USER" bash -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash'
-      print_warning "Run 'nvm install --lts' after restarting your shell"
+      sudo -u "$ACTUAL_USER" bash -c '
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        nvm install --lts
+      '
+      print_success "Node.js installed via NVM"
+      ;;
+    "bun")
+      print_step "Installing Bun JavaScript runtime..."
+      sudo -u "$ACTUAL_USER" bash -c 'curl -fsSL https://bun.sh/install | bash'
+      print_success "Bun installed"
       ;;
     "android")
       case "$DISTRO" in
       "arch")
-        if command -v yay &>/dev/null; then
-          yay -S --noconfirm android-studio
-        else
-          print_warning "Android Studio requires AUR, skipping..."
-        fi
+        install_packages android-tools jdk-openjdk
+        # Android Studio from AUR
+        install_packages android-studio || {
+          print_warning "Android Studio installation failed. Please install manually from: https://developer.android.com/studio"
+        }
         ;;
       "debian")
-        print_warning "Android Studio not available in repositories, please install manually"
+        install_packages android-tools-adb android-tools-fastboot openjdk-11-jdk
+        print_warning "Android Studio not available in repositories."
+        print_warning "Download from: https://developer.android.com/studio"
         ;;
       esac
       ;;
@@ -428,31 +534,42 @@ install_extra_packages() {
   local packages=()
   case "$DISTRO" in
   "arch")
+    # All packages are now in official repos!
     packages=(htop btop mpv pavucontrol git-delta)
+    install_packages "${packages[@]}"
     ;;
   "debian")
     packages=(htop mpv pavucontrol)
+    install_packages "${packages[@]}"
+
+    # Install git-delta manually for Debian
+    install_delta_manual
     ;;
   esac
 
-  install_packages "${packages[@]}"
+  print_success "Additional utilities installed"
+}
 
-  # Install git-delta manually for Debian
-  if [ "$DISTRO" = "debian" ] && ! command -v delta &>/dev/null; then
+install_delta_manual() {
+  if ! command -v delta &>/dev/null; then
     print_step "Installing git-delta manually..."
     local delta_version=$(curl -s "https://api.github.com/repos/dandavison/delta/releases/latest" | grep -Po '"tag_name": "\K[^"]*')
-    wget -q "https://github.com/dandavison/delta/releases/latest/download/git-delta_${delta_version}_amd64.deb"
-    dpkg -i "git-delta_${delta_version}_amd64.deb"
-    rm "git-delta_${delta_version}_amd64.deb"
+    local deb_file="git-delta_${delta_version}_amd64.deb"
+    wget -q "https://github.com/dandavison/delta/releases/latest/download/${deb_file}" -O "/tmp/${deb_file}"
+    dpkg -i "/tmp/${deb_file}" || apt-get install -f -y
+    rm "/tmp/${deb_file}"
   fi
-
-  print_success "Additional utilities installed"
 }
 
 setup_dotfiles() {
   print_step "Setting up dotfiles with Stow..."
 
   cd "$DOTFILES_DIR"
+
+  # Initialize git submodules for nvim and doom configs
+  if [ -f ".gitmodules" ]; then
+    sudo -u "$ACTUAL_USER" git submodule update --init --recursive
+  fi
 
   # Create stow ignore file for conditional components
   local stow_ignore="$DOTFILES_DIR/.stow-local-ignore"
@@ -479,15 +596,19 @@ _darcs
 ^/COPYING
 .*\.ttf
 install\.sh
+scripts
 EOF
 
   # Conditionally ignore Hyprland configs if not selected
   if [ "$INSTALL_HYPRLAND" = false ]; then
-    echo ".config/hypr" >>"$stow_ignore"
-    echo ".config/waybar" >>"$stow_ignore"
-    echo ".config/wofi" >>"$stow_ignore"
-    echo ".config/mako" >>"$stow_ignore"
-    echo ".config/swaylock" >>"$stow_ignore"
+    cat >>"$stow_ignore" <<EOF
+\.config/hypr
+\.config/waybar
+\.config/wofi
+\.config/mako
+\.config/swaylock
+\.config/hyprpaper
+EOF
   fi
 
   # Ignore terminal configs not selected
@@ -499,7 +620,7 @@ EOF
   done
 
   # Run stow
-  sudo -u "$ACTUAL_USER" stow . --target="$USER_HOME"
+  sudo -u "$ACTUAL_USER" stow . --target="$USER_HOME" --restow
 
   print_success "Dotfiles linked successfully"
 }
@@ -512,7 +633,34 @@ setup_shell() {
     chsh -s "$(which zsh)" "$ACTUAL_USER"
 
     print_success "Zsh set as default shell"
-    print_warning "Please restart your session to use the new shell"
+  fi
+}
+
+setup_tmux() {
+  if [ "$INSTALL_CORE" = true ]; then
+    print_step "Setting up Tmux Plugin Manager..."
+
+    local tpm_dir="$USER_HOME/.tmux/plugins/tpm"
+    if [ ! -d "$tpm_dir" ]; then
+      sudo -u "$ACTUAL_USER" bash -c "
+        git clone https://github.com/tmux-plugins/tpm '$tpm_dir'
+      "
+      print_success "TPM installed. Press Ctrl+a + I in tmux to install plugins"
+    fi
+  fi
+}
+
+setup_services() {
+  if [ "$INSTALL_HYPRLAND" = true ] && [ "$DISTRO" = "arch" ]; then
+    print_step "Enabling system services..."
+
+    # Enable NetworkManager
+    systemctl enable NetworkManager
+
+    # Enable Bluetooth
+    systemctl enable bluetooth
+
+    print_success "System services enabled"
   fi
 }
 
@@ -594,14 +742,16 @@ main() {
 
   [ "$INSTALL_CORE" = true ] && install_core_packages
   [ ${#INSTALL_TERMINALS[@]} -gt 0 ] && install_terminal_packages
-  [ "$INSTALL_HYPRLAND" = true ] && [ "$DISTRO" = "arch" ] && install_hyprland_packages
+  [ "$INSTALL_HYPRLAND" = true ] && install_hyprland_packages
   [ ${#INSTALL_FONTS[@]} -gt 0 ] && install_font_packages
   [ ${#INSTALL_DEV_TOOLS[@]} -gt 0 ] && install_dev_tools
   [ "$INSTALL_EXTRAS" = true ] && install_extra_packages
 
-  # Setup dotfiles
+  # Setup dotfiles and configurations
   setup_dotfiles
   setup_shell
+  setup_tmux
+  setup_services
 
   echo
   print_success "Installation completed successfully!"
@@ -609,9 +759,13 @@ main() {
   print_step "Next steps:"
   echo "  1. Restart your terminal or session"
   [ "$INSTALL_CORE" = true ] && echo "  2. Start tmux and press Ctrl+a + I to install plugins"
-  [ "$INSTALL_HYPRLAND" = true ] && echo "  3. Select Hyprland from your display manager"
-  [[ " ${INSTALL_DEV_TOOLS[@]} " =~ " nodejs " ]] && echo "  4. Run 'nvm install --lts' to install Node.js"
+  [ "$INSTALL_HYPRLAND" = true ] && echo "  3. Log out and select Hyprland from your display manager"
+  [[ " ${INSTALL_DEV_TOOLS[@]} " =~ " nodejs " ]] && echo "  4. Run 'nvm use --lts' to activate Node.js"
+  [[ " ${INSTALL_DEV_TOOLS[@]} " =~ " rust " ]] && echo "  5. Run 'source ~/.cargo/env' to activate Rust"
   echo
+  print_step "IMPORTANT: Most packages are now in official Arch repositories!"
+  print_step "This makes installation much more reliable than previous AUR-heavy setups"
+  print_step "Configuration files are now linked to your home directory"
   print_step "Enjoy your new setup! 🚀"
 }
 
