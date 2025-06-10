@@ -48,14 +48,10 @@ cargo install eza zoxide
 ### Fonts
 
 ```bash
-# Maple Mono NF (primary font)
-yay -S maplemono-nf
-
-# JetBrains Mono Nerd Font (alternative)
+# JetBrains Mono Nerd Font (main font)
 yay -S ttf-jetbrains-mono-nerd
 
 # For non-Arch systems, download manually:
-# Maple Mono: https://github.com/subframe7536/Maple-font/releases
 # JetBrains: https://github.com/ryanoasis/nerd-fonts
 
 # Refresh font cache
@@ -173,7 +169,7 @@ yay -S git-delta
 - **Neovim**: LazyVim configuration with modern plugins
 - **Hyprland**: Smooth animations and efficient tiling window management
 - **Kanata**: Caps Lock remapped to Escape/Ctrl (tap/hold behavior)
-- **Font**: Maple Mono NF with fallback to JetBrains Mono NF
+- **Font**: JetBrains Mono NF
 
 ## Customization
 
