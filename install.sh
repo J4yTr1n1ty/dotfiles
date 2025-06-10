@@ -178,8 +178,8 @@ select_terminals() {
 select_fonts() {
   echo
   print_step "Select fonts to install:"
-  echo "1) Maple Mono NF (Primary)"
-  echo "2) JetBrains Mono Nerd Font"
+  echo "1) JetBrains Mono Nerd Font (Primary)"
+  echo "2) Maple Mono NF"
   echo "3) Both fonts"
   echo "4) Back to main menu"
   echo
@@ -187,8 +187,8 @@ select_fonts() {
 
   INSTALL_FONTS=()
   case $choice in
-  1) INSTALL_FONTS=("maple") ;;
-  2) INSTALL_FONTS=("jetbrains") ;;
+  1) INSTALL_FONTS=("jetbrains") ;;
+  2) INSTALL_FONTS=("maple") ;;
   3) INSTALL_FONTS=("maple" "jetbrains") ;;
   4) return ;;
   esac
