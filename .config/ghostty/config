@@ -1,1 +1,3 @@
 theme = tokyonight_night
+background-opacity = 0.95
+window-decoration = none
