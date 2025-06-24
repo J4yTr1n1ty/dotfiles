@@ -112,6 +112,19 @@ zstyle ':completion:*' menu no
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
 zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 
+# Convert video to MP4 with even dimensions
+webm2mp4() {
+    if [ $# -eq 0 ]; then
+        echo "Usage: webm2mp4 <input_file>"
+        return 1
+    fi
+    
+    local input_file="$1"
+    local output_file="${input_file%.*}.mp4"
+    
+    ffmpeg -i "$input_file" -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -c:v libx264 -preset slow -crf 22 -c:a aac -b:a 128k "$output_file"
+}
+
 # Start Screen
 export PF_INFO="ascii title os host kernel uptime memory editor palette"
 if command -v pfetch &> /dev/null; then
