@@ -51,6 +51,9 @@ cargo install eza zoxide
 # JetBrains Mono Nerd Font (main font)
 yay -S ttf-jetbrains-mono-nerd
 
+# Monocraft
+yay -S otf-monocraft
+
 # For non-Arch systems, download manually:
 # JetBrains: https://github.com/ryanoasis/nerd-fonts
 
