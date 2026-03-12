@@ -48,6 +48,7 @@ alias ll="ls -l"
 alias la="ls -a"
 alias c="clear"
 alias q="exit"
+alias k="kubectl"
 
 alias weather="curl wttr.in"
 
