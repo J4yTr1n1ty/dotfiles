@@ -127,11 +127,8 @@ webm2mp4() {
 }
 
 # Start Screen
-export PF_INFO="ascii title os host kernel uptime memory editor palette"
-if command -v pfetch &> /dev/null; then
-  pfetch
-else
-  echo "pfetch not installed"
+if command -v fastfetch &> /dev/null; then
+  fastfetch
 fi
 
 # Go
